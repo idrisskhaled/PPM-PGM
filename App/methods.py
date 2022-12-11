@@ -9,27 +9,29 @@ from numpy import array, int32
 
 def moyenneGris(matrice):
     somme = 0
-    for i in range(0, matrice.shape[0]):
-        for j in range(0, matrice.shape[1]):
-            somme += matrice[i][j]
-
-    return somme / (matrice.shape[0] * matrice.shape[1])
+    for i in range(len(matrice)):
+        for j in range(len(matrice[0])):
+            somme += int(matrice[i][j])
+    return somme / (len(matrice) * len(matrice[0]))
 
 
 def ecartypeGris(matrice):
     somme = 0
     moy = moyenneGris(matrice)
-    for i in range(0, matrice.shape[0]):
-        for j in range(0, matrice.shape[1]):
-            somme += (matrice[i][j] - moy) ** 2
+    for i in range(len(matrice)):
+        for j in range(len(matrice[0])):
+            somme += (int(matrice[i][j]) - moy) ** 2
 
-    return np.sqrt(somme / (matrice.shape[0] * matrice.shape[1]))
+    return np.sqrt(somme / (len(matrice) * len(matrice[0])))
 
 
 def pgmread(filename):
+    print(filename)
     f = open(filename, 'r')
     # Read header information
     count = 0
+    height = 0
+    width = 0
     while count < 3:
         line = f.readline()
         if line[0] == '#':  # Ignore comments
@@ -48,18 +50,43 @@ def pgmread(filename):
         elif count == 3:  # Max gray level
             maxVal = int(line.strip())
     # Read pixels information
+    print(height,width)
     img = []
     buf = f.read()
     elem = buf.split()
-    if len(elem) != width * height:
-        print('Error in number of pixels')
-        exit()
     for i in range(height):
         tmpList = []
         for j in range(width):
             tmpList.append(elem[i * width + j])
         img.append(tmpList)
-    return (array(img), width, height)
+    return [img, height, width]
+
+def convertToPgm(matrix):
+    width = matrix[2]
+    height = matrix[1]
+    img = []
+    for i in range(height):
+        tmpList = []
+        for j in range(width):
+            s = matrix[0][i][j * 3 + 1]  # + matrix[0][i][j*3+1] + matrix[0][i][j*3 +2]
+            tmpList.append(s)
+        img.append(tmpList)
+    return [img, width, height]
+
+
+def convertToPpm(matrix):
+    width = matrix[2]
+    height = matrix[1]
+    img = []
+
+    for i in range(height):
+        tmpList = []
+        for j in range(width):
+            tmpList.append(matrix[0][i][j])
+            tmpList.append(matrix[0][i][j])
+            tmpList.append(matrix[0][i][j])
+        img.append(tmpList)
+    return [img, height, width]
 
 def ppmread(filename):
     f = open(filename, 'r')
@@ -91,16 +118,12 @@ def ppmread(filename):
         for j in range(width * 3):
             tmpList.append(elem[i * width * 3 + j])
         img.append(tmpList)
-    return [array(img), height, width]
+    return [img, height, width]
 
 
 
 def ppmwrite(img, filename, maxVal=255, magicNum='P3'):
-    f = open(filename + ".ppm", 'w')
-    file = open(filename + ".txt", "w+")
-    content = str(img)
-    file.write(content)
-    file.close()
+    f = open(filename + ".ppm", 'w+')
     width = img[2]
     height = img[1]
     f.write(magicNum + '\n')
@@ -109,51 +132,37 @@ def ppmwrite(img, filename, maxVal=255, magicNum='P3'):
     for i in range(height):
         for j in range(width * 3):
             f.write(str(img[0][i][j]) + ' ')
-        f.write('\n')
     f.close()
 
 
 
 def pgmwrite(img, filename, maxVal=255, magicNum='P2'):
-    img = int32(img).tolist()
     f = open(filename + ".pgm", 'w')
     file = open(filename + ".txt", "w+")
     content = str(img)
     file.write(content)
     file.close()
-    width = 0
-    height = 0
-    for row in img:
-        height = height + 1
-        width = len(row)
+    height = len(img)
+    width = len(img[0])
     f.write(magicNum + '\n')
     f.write(str(width) + ' ' + str(height) + '\n')
     f.write(str(maxVal) + '\n')
     for i in range(height):
-        count = 1
         for j in range(width):
             f.write(str(img[i][j]) + ' ')
-            if count >= 17:
-                # No line should contain gt 70 chars (17*4=68)
-                # Max three chars for pixel plus one space
-                count = 1
-                f.write('\n')
-            else:
-                count = count + 1
-        f.write('\n')
     f.close()
 
 
-def histo(img):
+def histogram(img):
     arr = np.zeros(256)
     for el in img:
         for num in el:
-            arr[num] += 1;
+            arr[int(num)] += 1;
     return arr
 
 
 def cumule(img):
-    arr = histo(img)
+    arr = histogram(img)
     arr_cumul = np.zeros(256)
     somm = 0
     for i, el in enumerate(arr):
@@ -166,10 +175,8 @@ def histo_egal(img):
     pc = []
     a = []
     n1 = []
-    arr = histo(img)
-    #print(arr)
+    arr = histogram(img)
     arr_cumul = cumule(img)
-    #print(arr_cumul)
     for value in arr:
         p.append(value / sum(arr))
     for value in arr_cumul:
@@ -181,12 +188,10 @@ def histo_egal(img):
     for index in range(len(arr)):
         if n1[index] < len(arr):
             new_arr[n1[index]] = new_arr[n1[index]] + arr[index]
-    new_img = [len(img[0]) * [0]] * len(img)
-    for i,line in enumerate(img):
-        for j,column in enumerate(line):
-           new_img[i][j] = n1[column]
-
-    return new_img
+    for i in range(len(img)):
+        for j in range(len(img[0])):
+           img[i][j] = n1[int(img[i][j])]
+    return img
 
 def seuiller(image : str,seuil_rouge , seuil_vert, seuil_bleu,operateur):
     img = ppmread(image)
@@ -225,7 +230,7 @@ def seuiller(image : str,seuil_rouge , seuil_vert, seuil_bleu,operateur):
                 else:
                     img[0][i][j * 3 +2] = 0
 
-    ppmwrite(img,'peppers-out-'+operateur)
+    ppmwrite(img,'out-'+operateur)
 
 
 

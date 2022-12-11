@@ -1,6 +1,7 @@
 import sys
 
 from PyQt6.QtWidgets import QApplication, QMainWindow
+from PIL import Image
 
 from App.New_UI import UiMainWindow
 

@@ -1,9 +1,11 @@
 import os
 
+from PIL import Image
 from PyQt6 import QtCore, QtGui, QtWidgets
 from PyQt6.QtGui import QAction, QIcon
 from PyQt6.QtWidgets import QFileDialog, QMainWindow
-
+import numpy as np
+import matplotlib.pyplot as plt
 from App.methods import *
 
 
@@ -366,6 +368,12 @@ class UiMainWindow(QMainWindow):
             else:
                 ext = ext_list[1]
                 self.ext = ext
+                if ext == 'ppm':
+                    self.checkBox7.setVisible(True)
+                    self.treshold_red.setVisible(True)
+                    self.treshold_green.setVisible(True)
+                    self.treshold_blue.setVisible(True)
+                    self.treshold_method.setVisible(True)
                 self.translate_checkboxes(self.comboBox.currentIndex(), ext)
                 self.checkBox1.setVisible(True)
                 self.checkBox2.setVisible(True)
@@ -373,11 +381,7 @@ class UiMainWindow(QMainWindow):
                 self.checkBox4.setVisible(True)
                 self.checkBox5.setVisible(True)
                 self.checkBox6.setVisible(True)
-                self.checkBox7.setVisible(True)
-                self.treshold_red.setVisible(True)
-                self.treshold_green.setVisible(True)
-                self.treshold_blue.setVisible(True)
-                self.treshold_method.setVisible(True)
+
 
                 result = None
         if result is not None:
@@ -387,6 +391,7 @@ class UiMainWindow(QMainWindow):
             self.result_label.close()
 
     def start(self):
+
         infile = self.lineEdit.text()
         progress_bar = self.progressBar
         logs = self.text_edit
@@ -400,21 +405,195 @@ class UiMainWindow(QMainWindow):
                 result = pgmread(infile)
                 progress_bar.setValue(50)
                 logs.setText("Ecriture sous format PPM")
-                ppmwrite(result[0],'result')
+                result2 = convertToPpm(result)
+                ppmwrite(result2, 'result')
                 progress_bar.setValue(100)
                 logs.setText("Succès !")
+                im = Image.open("result.ppm")
+                im.show()
             else:
                 progress_bar.setValue(25)
                 logs.setText("Lecture de l'image PPM")
                 result = ppmread(infile)
                 progress_bar.setValue(50)
                 logs.setText("Ecriture sous format PGM")
-                pgmwrite(result[0], 'result')
+                res = convertToPgm(result)
+                pgmwrite(res[0], 'result')
                 progress_bar.setValue(100)
                 logs.setText("Succès !")
+                im = Image.open("result.pgm")
+                im.show()
+        if self.checkBox2.isChecked():
+            ext = infile.split('.')[1]
+            if ext == 'pgm':
+                progress_bar.setValue(25)
+                logs.append("Lecture de l'image PGM")
+                img = pgmread(infile)
+                progress_bar.setValue(50)
+                logs.append("Calcul de l'histogramme")
+                histo = histogram(img[0])
+                progress_bar.setValue(100)
+                logs.append("histogramme de l'image PGM: ")
+                histo_str = ""
+                for number in histo:
+                    histo_str = histo_str + str(number) + " "
+                logs.append(histo_str)
+                x = np.arange(0, 256)
+                y = histo
+                # plotting
+                plt.title("Histogramme")
+                plt.xlabel("Nombre de pixels")
+                plt.ylabel("Occurence")
+                plt.plot(x, y, color="red")
+                plt.show()
+            elif ext == 'ppm':
+                progress_bar.setValue(25)
+                logs.append("Lecture de l'image PPM")
+                img = ppmread(infile)
+                progress_bar.setValue(50)
+                logs.append("Calcul de l'histogramme")
+                histo = histogram(img[0])
+                progress_bar.setValue(100)
+                logs.append("histogramme : ")
+                histo_str = ""
+                for number in histo:
+                    histo_str = histo_str + str(number) + " "
+                logs.append(histo_str)
+                x = np.arange(0, 256)
+                y = histo
+                # plotting
+                plt.title("Histogramme de l'image PPM")
+                plt.xlabel("Niveau")
+                plt.ylabel("Nombre de pixels")
+                plt.plot(x, y, color="red")
+                plt.show()
+        if self.checkBox3.isChecked():
+            ext = infile.split('.')[1]
+            if ext == 'pgm':
+                progress_bar.setValue(25)
+                logs.append("Lecture de l'image PGM")
+                img = pgmread(infile)
+                progress_bar.setValue(50)
+                logs.append("Calcul de l'histogramme cumulé")
+                histo = cumule(img[0])
+                progress_bar.setValue(100)
+                logs.append("histogramme cumulé: ")
+                histo_str = ""
+                for number in histo:
+                    histo_str = histo_str + str(number) + " "
+                logs.append(histo_str)
+                x = np.arange(0, 256)
+                y = histo
+                # plotting
+                plt.title("Histogramme cumulé de l'image PGM")
+                plt.xlabel("Niveau")
+                plt.ylabel("Nombre de pixels cumulé")
+                plt.plot(x, y, color="red")
+                plt.show()
+            elif ext == 'ppm':
+                progress_bar.setValue(25)
+                logs.append("Lecture de l'image PPM")
+                img = ppmread(infile)
+                progress_bar.setValue(50)
+                logs.append("Calcul de l'histogramme cumulé")
+                histo = cumule(img[0])
+                progress_bar.setValue(100)
+                logs.append("histogramme cumulé: ")
+                histo_str = ""
+                for number in histo:
+                    histo_str = histo_str + str(number) + " "
+                logs.append(histo_str)
 
-
-
+                x = np.arange(0, 256)
+                y = histo
+                # plotting
+                plt.title("Histogramme cumulé de l'image PPM")
+                plt.xlabel("Niveau")
+                plt.ylabel("Nombre de pixels cumulé")
+                plt.plot(x, y, color="red")
+                plt.show()
+        if self.checkBox4.isChecked():
+            ext = infile.split('.')[1]
+            if ext == 'pgm':
+                progress_bar.setValue(25)
+                logs.append("Lecture de l'image PGM")
+                img = pgmread(infile)
+                progress_bar.setValue(50)
+                logs.append("Calcul de l'histogramme égalisé")
+                img = histo_egal(img[0])
+                progress_bar.setValue(75)
+                logs.append("Ecriture de l'image généré")
+                pgmwrite(img,"result-egalised")
+                progress_bar.setValue(100)
+                logs.append("Succés !")
+                im = Image.open("result-egalised.pgm")
+                im.show()
+            elif ext == 'ppm':
+                progress_bar.setValue(25)
+                logs.append("Lecture de l'image PPM")
+                img = ppmread(infile)
+                progress_bar.setValue(50)
+                logs.append("Calcul de l'histogramme égalisé")
+                new_img = histo_egal(img[0])
+                progress_bar.setValue(75)
+                logs.append("Ecriture de l'image généré")
+                img[0] = new_img
+                ppmwrite(img, "result-egalised")
+                progress_bar.setValue(100)
+                logs.append("Succés !")
+                im = Image.open("result-egalised.ppm")
+                im.show()
+        if self.checkBox5.isChecked():
+            ext = infile.split('.')[1]
+            if ext == 'pgm':
+                progress_bar.setValue(25)
+                logs.append("Lecture de l'image PGM")
+                img = pgmread(infile)
+                progress_bar.setValue(50)
+                logs.append("Calcul du moyenne des niveaux de gris")
+                moy = moyenneGris(img[0])
+                progress_bar.setValue(100)
+                logs.append("moyenne : " + str(moy))
+            if ext == 'ppm':
+                progress_bar.setValue(25)
+                logs.append("Lecture de l'image PPM")
+                img = ppmread(infile)
+                progress_bar.setValue(50)
+                logs.append("Calcul du moyenne des niveaux de gris")
+                moy = moyenneGris(img[0])
+                progress_bar.setValue(100)
+                logs.append("moyenne : " + str(moy))
+        if self.checkBox6.isChecked():
+            ext = infile.split('.')[1]
+            if ext == 'pgm':
+                progress_bar.setValue(25)
+                logs.append("Lecture de l'image PGM")
+                img = pgmread(infile)
+                progress_bar.setValue(50)
+                logs.append("Calcul de l'écart type de niveaux de gris")
+                moy = ecartypeGris(img[0])
+                progress_bar.setValue(100)
+                logs.append("écart type : " + str(moy))
+            if ext == 'ppm':
+                progress_bar.setValue(25)
+                logs.append("Lecture de l'image PPM")
+                img = ppmread(infile)
+                progress_bar.setValue(50)
+                logs.append("Calcul de l'écart type de niveaux de gris")
+                moy = ecartypeGris(img[0])
+                progress_bar.setValue(100)
+                logs.append("écart type : " + str(moy))
+        if self.checkBox7.isChecked():
+            progress_bar.setValue(25)
+            logs.append("Lecture de l'image PPM")
+            progress_bar.setValue(50)
+            logs.append("seuillage")
+            seuiller(infile, int(self.treshold_red.text()), int(self.treshold_green.text()),
+                     int(self.treshold_blue.text()), self.treshold_method.text())
+            progress_bar.setValue(100)
+            logs.append("Succès!")
+            im = Image.open("out-"+self.treshold_method.text()+".ppm")
+            im.show()
     def cancel(self):
         self.text_edit.setText("")
         self.progressBar.setProperty("value",0)
